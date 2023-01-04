@@ -1,11 +1,8 @@
 import sys
 from PIL import Image as PImage
 import numpy as np
-from bitarray import bitarray
-from matplotlib import pyplot as plt
 from numpy import ndarray
-from ruamel_yaml import BytesIO
-from sklearn.cluster import KMeans
+
 
 
 def average_matrix(arr, row, col):
@@ -129,59 +126,67 @@ def decompression(arr, row, col, code_book):
     if arr_col % col != 0:
         arr_col -= arr_col % col
     start_row = 0
-    start_col = -1 * col
+    start_col = 0
+    temp_start_col = 0
+    temp_start_row = 0
     file = open('compressed.txt', 'rb')
     data = file.read()
     file.close()
     data = list(data)
+
     idx = 0
-    decommpressed = []
+    decommpressed =[[0] * arr_row for i in range(arr_col)]
     for i in range((arr_row * arr_col) // (row * col)):
-        decommpressed.append(code_book[int(data[idx])])
+        temp = code_book[int(data[idx])]
+        start_row = temp_start_row
+
+        for j in range(row):
+            if start_col >= arr_col:
+                break
+            start_col = temp_start_col
+            for k in range(col):
+                decommpressed[start_row][start_col] = temp[j][k]
+                start_col += 1
+            start_row += 1
         idx += 1
+        if start_col >= arr_row:
+            temp_start_col = 0
+            temp_start_row += row
+        else:
+            temp_start_col += col
+
     decommpressed = np.array(decommpressed)
     return decommpressed
 
 
 
 
-imgPath = 'E:\خش برجلك اليمين\Data Comp\Vector-Quantization/photo.png'
+imgPath = 'path fo the photo to be compressed'
 
 img = PImage.open(imgPath).convert("L")
 
 # converts image to numpy array
 imgArr = np.asarray(img)
-# n = int(input("enter the vector size: "))
-
-# print(type(imgArr), imgArr.shape)
-# print(np.min(imgArr),np.max(imgArr)) # 0 to 255 uint8
 
 
 
-num = [[1, 2, 7, 9, 4, 11],
-       [3, 4, 6, 6, 12, 12],
-       [4, 9, 15, 14, 9, 9],
-       [10, 10, 20, 18, 8, 8],
-       [4, 3, 17, 16, 1, 4],
-       [4, 5, 18, 18, 5, 6]]
-
-arr = np.array(num)
-# print(sum_submatrices(imgArr, 2, 2))
+h  = int(input())
+w  = int(input())
+n = int(input())
 
 
 
-code_book = get_code_book(imgArr, 2, 2, 2)
 
-ans = compress(imgArr,code_book,2,2,2)
+code_book = get_code_book(imgArr, h, w, n)
+
+compress(imgArr,code_book,h,w,n)
 print(imgArr.shape)
-imgArr2 = decompression(imgArr,2,2,code_book)
-#imgArr = np.squeeze(imgArr, axis=2)
+print(imgArr)
+imgArr2 = decompression(imgArr,h,w,code_book)
 print(imgArr.shape)
 savePath = 'decodedImg.png'
 print(imgArr2)
-#decodedImg = PImage.fromarray(imgArr2)
 decodedImg = PImage.fromarray((imgArr2 * 255).astype(np.uint8))
 decodedImg.save(savePath) # will save it as gray image
-# print(layerR)
 
 
